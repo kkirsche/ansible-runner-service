@@ -62,43 +62,40 @@ class InventoryOperationNotAllowed(Exception):
 def no_group(func):
     def func_wrapper(*args):
         obj, group = args
-        if group in obj.groups:
-            logger.debug("Group add request for '{}' failed - it already "
-                         "exists".format(group))
-            if obj.exclusive_lock:
-                obj.unlock()
-            raise InventoryGroupExists("Group {} already exists".format(group))
-        else:
+        if group not in obj.groups:
             return func(*args)
+        logger.debug("Group add request for '{}' failed - it already "
+                     "exists".format(group))
+        if obj.exclusive_lock:
+            obj.unlock()
+        raise InventoryGroupExists("Group {} already exists".format(group))
     return func_wrapper
 
 
 def group_exists(func):
     def func_wrapper(*args):
         obj, group = args[:2]
-        if group not in obj.groups:
-            logger.debug("Group request for '{}' failed - it's not in "
-                         "the inventory".format(group))
-            if obj.exclusive_lock:
-                obj.unlock()
-            raise InventoryGroupMissing("{} not in Inventory".format(group))
-        else:
+        if group in obj.groups:
             return func(*args)
+        logger.debug("Group request for '{}' failed - it's not in "
+                     "the inventory".format(group))
+        if obj.exclusive_lock:
+            obj.unlock()
+        raise InventoryGroupMissing("{} not in Inventory".format(group))
     return func_wrapper
 
 
 def host_exists(func):
     def func_wrapper(*args):
         obj, group, host = args[:3]
-        if host not in obj.group_show(group):
-            logger.debug("request for '{}' failed - it's not in "
-                         "the inventory".format(host))
-            if obj.exclusive_lock:
-                obj.unlock()
-            raise InventoryHostMissing("{} not in group '{}'".format(host,
-                                                                     group))
-        else:
+        if host in obj.group_show(group):
             return func(*args)
+        logger.debug("request for '{}' failed - it's not in "
+                     "the inventory".format(host))
+        if obj.exclusive_lock:
+            obj.unlock()
+        raise InventoryHostMissing("{} not in group '{}'".format(host,
+                                                                 group))
     return func_wrapper
 
 
@@ -240,7 +237,7 @@ class AnsibleInventory(object):
     def group_add(self, group):
         node = self.inventory['all']['children']
         if not isinstance(node, dict):
-            self.inventory['all']['children'] = dict()
+            self.inventory['all']['children'] = {}
         self.inventory['all']['children'][group] = {"hosts": None}
         logger.info("Group '{}' added to the inventory".format(group))
         self.save()
@@ -285,25 +282,19 @@ class AnsibleInventory(object):
             if host not in self.inventory['all']['children'][group]['hosts']:
                 raise InventoryHostMissing("Host {} not in {}".format(host,
                                                                       group))
-            else:
-                del self.inventory['all']['children'][group]['hosts'][host]
-                logger.info("Host '{}' removed from inventory group "
-                            "'{}'".format(host, group))
-                if not self.inventory['all']['children'][group]['hosts']:
-                    self.inventory['all']['children'][group]['hosts'] = None
-                self.save()
+            del self.inventory['all']['children'][group]['hosts'][host]
+            logger.info("Host '{}' removed from inventory group "
+                        "'{}'".format(host, group))
+            if not self.inventory['all']['children'][group]['hosts']:
+                self.inventory['all']['children'][group]['hosts'] = None
+            self.save()
         else:
             logger.debug("Host removal attempted against the empty "
                          "group '{}'".format(group))
             raise InventoryGroupEmpty("Group is empty")
 
     def host_show(self, host):
-        host_groups = list()
-        for group in self.groups:
-            if host in self.group_show(group):
-                host_groups.append(group)
-
-        return host_groups
+        return [group for group in self.groups if host in self.group_show(group)]
 
     @group_exists
     @host_exists

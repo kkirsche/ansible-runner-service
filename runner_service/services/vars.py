@@ -62,12 +62,11 @@ def add_hostvars(host_name, group_name, vars, store_type='file'):
             r.status, r.msg = "OK", \
                               "Variables written successfully to " \
                               "{}".format(hostvars_file)
-            return r
         else:
             r.status, r.msg = "FAILED", \
                               "Unable to write variables to the " \
                               "filesystem @ {}".format(hostvars_file)
-            return r
+        return r
     else:
         # Store the variables directly in the inventory
         inventory = AnsibleInventory(excl=True)
@@ -116,10 +115,7 @@ def remove_hostvars(host_name, group_name):
     try:
         os.remove(hostvars_path)
     except OSError as e:
-        if e.errno == 2:
-            # file doesn't exist, ignore the error
-            pass
-        else:
+        if e.errno != 2:
             raise
 
     # now remove from the inventory
@@ -203,12 +199,11 @@ def add_groupvars(group_name, vars, store_type='file'):
             r.status, r.msg = "OK", \
                               "Variables written successfully to " \
                               "{}".format(groupvars_path)
-            return r
         else:
             r.status, r.msg = "FAILED", \
                               "Unable to write variables to the " \
                               "filesystem @ {}".format(groupvars_path)
-            return r
+        return r
     else:
         # inventory group vars is requested
         # Store the variables directly in the inventory
@@ -248,10 +243,7 @@ def remove_groupvars(group_name):
     try:
         os.remove(groupvars_path)
     except OSError as e:
-        if e.errno == 2:
-            # file doesn't exist, ignore the error
-            pass
-        else:
+        if e.errno != 2:
             raise
 
     # now remove from the inventory

@@ -152,7 +152,7 @@ def _run_playbook(playbook_name, tags=None):
         logger.error(r)
         return r
     filter = request.args.to_dict()
-    if not all([_k in valid_filter for _k in filter.keys()]):
+    if any(_k not in valid_filter for _k in filter.keys()):
         r.status, r.msg = "INVALID", "Bad request, supported " \
                           "filters are: {}".format(','.join(valid_filter))
         return r
@@ -162,7 +162,7 @@ def _run_playbook(playbook_name, tags=None):
         target_hosts = filter['limit'].split(',')
         inv_hosts = AnsibleInventory().hosts
         logger.debug("Checking host limit against the inventory")
-        if all([_h in inv_hosts for _h in target_hosts]):
+        if all(_h in inv_hosts for _h in target_hosts):
             logger.debug("hosts in the limit list match the inventory")
 
         else:
@@ -198,10 +198,10 @@ def _run_playbook(playbook_name, tags=None):
 
     if play_uuid:
         r.status, r.msg, r.data = "STARTED", status, {"play_uuid": play_uuid}
-        return r
     else:
         r.status, r.msg = "FAILED", "Runner thread failed to start"
-        return r
+
+    return r
 
 
 class StartPlaybook(BaseResource):

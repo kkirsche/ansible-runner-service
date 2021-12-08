@@ -188,8 +188,7 @@ class HostMgmt(BaseResource):
         """ # noqa
 
         valid_parms = ['others', 'port']
-        group_list = []
-        group_list.append(group_name)
+        group_list = [group_name]
         ssh_port = None
 
         args = request.args.to_dict()
