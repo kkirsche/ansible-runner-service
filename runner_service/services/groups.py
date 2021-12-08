@@ -28,10 +28,10 @@ def add_group(group_name):
         else:
             r.status, r.msg = 'OK', 'Group {} added'.format(group_name)
 
-        return r
     else:
         r.status, r.msg = 'LOCKED', 'Unable to lock the inventory file'
-        return r
+
+    return r
 
 
 def remove_group(group_name):
@@ -45,10 +45,10 @@ def remove_group(group_name):
         else:
             r.status, r.msg = 'OK', 'Group {} removed'.format(group_name)
 
-        return r
     else:
         r.status, r.msg = 'LOCKED', 'Unable to lock the inventory file'
-        return r
+
+    return r
 
 
 def get_groups():

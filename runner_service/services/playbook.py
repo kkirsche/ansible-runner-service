@@ -39,7 +39,6 @@ def get_status(play_uuid):
         }
 
         logger.debug("runner_cache 'hit' for playbook status request")
-        return r
     else:
         logger.debug("runner_cache 'miss' for run {}".format(play_uuid))
 
@@ -62,14 +61,14 @@ def get_status(play_uuid):
         if os.path.exists(pb_status):
             # playbook execution has finished
             r.status, r.msg = "OK", fread(pb_status)
-            return r
         else:
             r.status, r.msg = "UNKNOWN", \
                             "The artifacts directory is incomplete!"
             logger.warning("Status Request for Play uuid '{}', found an incomplete"
                         " artifacts directory...Possible ansible_runner "
                         " error?".format(play_uuid))
-            return r
+
+    return r
 
 
 def list_playbooks():

@@ -92,7 +92,7 @@ def setup_ssh():
         logging.info("SSH keys present in {}".format(env_dir))
         return
 
-    elif all([not state for state in ssh_states]):
+    elif not any(ssh_states):
         logging.debug("No SSH keys present in {}".format(env_dir))
         logging.info("Creating SSH keys")
         # no keys are setup, so create them
@@ -104,7 +104,7 @@ def setup_ssh():
         else:
             return
 
-    elif any(ssh_states):
+    else:
         # one of the files exists without the other - admin intervention req'd
         logging.critical("The existing pub/priv key pair is incomplete (one"
                          " exists without the other). Service aborting")
@@ -132,8 +132,6 @@ def setup_localhost_ssh():
         if app_pub_key not in auth_data:
             with open(authorized_keys, "a") as auth_file:
                 auth_file.write("{}\n".format(app_pub_key))
-        else:
-            pass
 
 
 def setup_common_environment():

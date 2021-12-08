@@ -50,7 +50,6 @@ def create_self_signed_cert(cert_dir, cert_pfx):
     if os.path.exists(cert_filename) \
             or os.path.exists(key_filename):
         logger.info("Using existing SSL files in {}".format(cert_dir))
-        return (cert_filename, key_filename)
     else:
         logger.info("Existing SSL files not found in {}".format(cert_dir))
         logger.info("Self-signed cert will be created - expiring in {} "
@@ -89,7 +88,8 @@ def create_self_signed_cert(cert_dir, cert_pfx):
         with open(os.path.join(cert_dir, key_filename), "wt") as key_fd:
             key_fd.write(crypto.dump_privatekey(crypto.FILETYPE_PEM, k).decode('utf-8'))    # noqa
 
-        return (cert_filename, key_filename)
+
+    return (cert_filename, key_filename)
 
 
 def rm_r(path):
@@ -245,11 +245,7 @@ class SSHClient(object):
 def ssh_connect_ok(host, user=None, port=None):
 
     if not user:
-        if configuration.settings.target_user:
-            user = configuration.settings.target_user
-        else:
-            user = getpass.getuser()
-
+        user = configuration.settings.target_user or getpass.getuser()
     priv_key = os.path.join(configuration.settings.ssh_private_key)
 
     if not os.path.exists(priv_key):

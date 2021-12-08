@@ -36,8 +36,7 @@ def get_event_info(event_path):
 
     with open(event_path, 'r') as event_fd:
         try:
-            event_info = json.loads(event_fd.read())
-            return event_info
+            return json.loads(event_fd.read())
         except json.JSONDecodeError as err:
             logger.warning("Invalid JSON within {}..."
                            "skipping".format(event_fname))
@@ -99,21 +98,20 @@ def event_summary(event_info, summary_keys=['host', 'task', 'role', 'event']):
     :return: Returns summary metadata for the event
     """
 
-    if summary_keys:
-        base = {k: event_info[k] for k in summary_keys if k in event_info}
-
-        event_data = {}
-        if 'event_data' in event_info:
-            event_data = {k: event_info['event_data'][k] for k in summary_keys
-                          if k in event_info.get('event_data')}
-
-        # python3.5 an above idiom
-        # return {**base, **event_data}
-        merged = base.copy()
-        merged.update(event_data)
-        return merged
-    else:
+    if not summary_keys:
         return event_info
+    base = {k: event_info[k] for k in summary_keys if k in event_info}
+
+    event_data = {}
+    if 'event_data' in event_info:
+        event_data = {k: event_info['event_data'][k] for k in summary_keys
+                      if k in event_info.get('event_data')}
+
+    # python3.5 an above idiom
+    # return {**base, **event_data}
+    merged = base.copy()
+    merged.update(event_data)
+    return merged
 
 
 def scan_event_data(work_queue, filter, matched_events):
@@ -188,7 +186,7 @@ def get_events(play_uuid, filter):
         work_queue.put(event_path)
 
     threads = []
-    for ctr in range(0, configuration.settings.event_threads):
+    for _ in range(configuration.settings.event_threads):
         _t = threading.Thread(target=scan_event_data,
                               args=(work_queue, filter, matched_events,))
         _t.daemon = True
@@ -212,10 +210,9 @@ def get_event(play_uuid, event_uuid):
 
     #  try to use cache first
     cut_event_uuid = event_uuid.split('-', 1)[1]
-    if play_uuid in event_cache:
-        if cut_event_uuid in event_cache[play_uuid]:
-            r.status, r.data = "OK", event_cache[play_uuid][cut_event_uuid]
-            return r
+    if play_uuid in event_cache and cut_event_uuid in event_cache[play_uuid]:
+        r.status, r.data = "OK", event_cache[play_uuid][cut_event_uuid]
+        return r
 
     #  revert to io
     pb_path = build_pb_path(play_uuid)
@@ -225,7 +222,7 @@ def get_event(play_uuid, event_uuid):
 
     if event_path:
         r.status, r.data = "OK", json.loads(fread(event_path[0]))
-        return r
     else:
         r.status, r.msg = "NOTFOUND", "Event not found"
-        return r
+
+    return r
